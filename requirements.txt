@@ -1,0 +1,14 @@
+flask>=3.0.0
+werkzeug>=3.0.0
+numpy>=1.24.0
+Pillow>=10.0.0
+opencv-python>=4.8.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Keras modelleri (.h5 / .keras) için
+tensorflow>=2.13.0
+
+# PyTorch modelleri (.pt / .pth) için
+torch>=2.0.0
+torchvision>=0.15.0

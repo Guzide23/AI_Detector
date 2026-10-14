@@ -1,0 +1,11 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Yüklenen görseller ve Grad-CAM çıktıları
+static/uploads/
+
+# Model dosyaları (boyut sınırı nedeniyle ayrıca dağıtılır)
+models/*
+!models/.gitkeep

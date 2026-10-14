@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Dedektör</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">AI<strong>Dedektör</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-grid">
+
+    <!-- ══ SOL PANELi ══ -->
+    <aside class="panel panel-left">
+
+      <!-- Model seçimi -->
+      <div class="section-block">
+        <h2 class="block-title">Model</h2>
+        <div class="model-list" id="modelList">
+          {% if models %}
+            {% for m in models %}
+            <label class="model-card">
+              <input type="radio" name="model" value="{{ m.id }}" {% if loop.first %}checked{% endif %} />
+              <div class="model-card-body">
+                <span class="model-name">{{ m.name }}</span>
+                <span class="model-badge model-badge--{{ m.format|lower }}">{{ m.format }}</span>
+              </div>
+            </label>
+            {% endfor %}
+          {% else %}
+            <div class="empty-box">
+              <p>⚠ <code>models/</code> klasörüne model dosyası ekleyin</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- GradCAM toggle — modelin hemen altında -->
+      <div class="section-block">
+        <label class="toggle-row">
+          <span class="toggle-label">GradCAM Görselleştirme</span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="gradcamToggle" />
+            <span class="toggle-thumb"></span>
+          </div>
+        </label>
+        <p class="block-hint">Modelin odaklandığı bölgeleri gösterir</p>
+      </div>
+
+      <!-- Görüntü Dönüşümü — accordion -->
+      <div class="section-block">
+        <button class="accordion-btn" id="augAccordionBtn">
+          <span>Görüntü Dönüşümü</span>
+          <span class="accordion-arrow">▸</span>
+        </button>
+        
+
+        <div class="accordion-body" id="augAccordionBody" style="display:none">
+          {% for category, items in catalog.items() %}
+          <div class="aug-category">
+            <div class="aug-cat-label">{{ category }}</div>
+            {% for item in items %}
+            <label class="aug-check">
+              <input type="radio" name="augmentation" value="{{ item.id }}" />
+              <span class="aug-check-box"></span>
+              <span class="aug-check-label">{{ item.name }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% endfor %}
+
+          <button class="btn-ghost btn-sm" id="clearAugBtn">Seçimi Temizle</button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ══ ORTA: Görsel ══ -->
+    <section class="panel panel-center">
+      <h2 class="block-title">Görsel</h2>
+
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <div class="upload-content" id="uploadContent">
+          <div class="upload-icon">⊕</div>
+          <p class="upload-text">Görsel sürükleyin veya seçin</p>
+          <p class="upload-hint">PNG · JPG · WEBP · Maks. 16 MB</p>
+          <button class="btn-secondary" id="browseBtn">Dosya Seç</button>
+        </div>
+        <div class="upload-preview" id="uploadPreview" style="display:none">
+          <img id="previewImg" src="" alt="Önizleme" />
+          <button class="btn-remove" id="removeBtn" title="Kaldır">✕</button>
+        </div>
+      </div>
+
+      <!-- Yan yana karşılaştırma -->
+      <div class="compare-row" id="compareRow" style="display:none">
+        <div class="compare-box">
+          <div class="compare-label">Orijinal</div>
+          <img id="compareOrig" src="" alt="Orijinal" />
+        </div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-box">
+          <div class="compare-label" id="compareAugLabel">Dönüştürülmüş</div>
+          <img id="compareAug" src="" alt="Dönüştürülmüş" />
+        </div>
+      </div>
+
+      <!-- GradCAM -->
+      <div class="gradcam-panel" id="gradcamPanel" style="display:none">
+        <div class="gradcam-header">
+          <span>GradCAM — Odak Haritası</span>
+          <div class="gradcam-legend">
+            <span class="legend-low">Düşük</span>
+            <span class="legend-bar"></span>
+            <span class="legend-high">Yüksek</span>
+          </div>
+        </div>
+        <img id="gradcamImg" src="" alt="GradCAM" class="gradcam-img" />
+      </div>
+
+      <button class="btn-primary" id="predictBtn" disabled>
+        <span>▶</span> Tahmin Et
+      </button>
+    </section>
+
+    <!-- ══ SAĞ: Sonuçlar ══ -->
+    <aside class="panel panel-right">
+      <h2 class="block-title">Sonuçlar</h2>
+
+      <div id="resultsPlaceholder" class="results-placeholder">
+        <span class="placeholder-icon">◎</span>
+        <p>Tahmin sonuçları burada görünecek</p>
+      </div>
+
+      <div id="loadingState" style="display:none" class="loading-state">
+        <div class="spinner"></div>
+        <p>Tahmin yapılıyor…</p>
+      </div>
+
+      <div id="resultsContent" style="display:none">
+        <div class="result-meta" id="resultMeta"></div>
+        <div id="predictionBars"></div>
+        <div class="result-verdict" id="resultVerdict"></div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>
